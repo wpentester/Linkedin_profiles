@@ -1,3 +1,4 @@
+```sh
 # Linkedin_profiles  
 scrapes Linkedin for company employee profiles  
   
@@ -25,4 +26,5 @@ optional arguments:
                          Function to perform:    
                          get - Logs into Linkedin and saves the employee html pages  
                          create - Parses the html pages to create employee lists  
-  --ignore              Ignore profiles without a name  
+  --ignore              Ignore profiles without a name 
+```
