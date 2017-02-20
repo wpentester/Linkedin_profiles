@@ -10,6 +10,9 @@ import json
 import argparse
 import os
 import re
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -43,9 +46,18 @@ class LinkedinProfiles():
         driver.find_element_by_id("login-password").send_keys(self.password)
         driver.find_element_by_id("login-submit").click()
 
+        # wait until the class appears
+        driver.implicitly_wait(5)
+
+        #a = driver.find_elements_by_xpath(//*[contains(@id, 'a11y-ember')]""")
+        targetElement = driver.find_element_by_xpath("//input[contains(@id, \"a11y-ember\")]").clear()
+        targetElement = driver.find_element_by_xpath("//input[contains(@id, \"a11y-ember\")]").send_keys(self.company)  
+        targetElement
         # driver.find_element_by_name("submit").click()
-        driver.find_element_by_id("main-search-box").clear()
-        driver.find_element_by_id("main-search-box").send_keys(self.company)
+        #driver.find_element_by_class_name('ember-text-field ember-view').clear()
+        #driver.find_element_by_class_name('ember-text-field ember-view').send_keys(self.company)
+
+
         # Create the search URL
         search = "https://www.linkedin.com/ta/federator"
         params = {'orig': 'GLHD',
@@ -63,6 +75,7 @@ class LinkedinProfiles():
             # Select the first company in the results list
             if item['sourceID'] == 'company':
                 comp_id = item['id']
+                print "Found company ID"
                 break
         if comp_id:
             # Create the URL for getting the company's employee page
@@ -75,7 +88,12 @@ class LinkedinProfiles():
         # driver.find_element_by_link_text("See all").click()
         previous = ""
         for i in range(0, 99):
-            sleep(5)
+            print "Processing Page: %d" % i
+
+            #driver.find_elements_by_xpath('//div[contains(@class, \"search-is-loading\")]')
+            while driver.find_elements_by_xpath('//div[contains(@class, \"search-is-loading\")]'):
+                sleep(50.0/1000.0)
+
             f = open("{}/{}{}_source.html".format(self.scompany, self.scompany, i), 'wb')
             source = driver.page_source
             # The source will be different every time even if it is the same page
@@ -90,7 +108,9 @@ class LinkedinProfiles():
             # self.parse_source(source)
             # TODO: if there is no "Next" button, end the loop
             try:
-                driver.find_element_by_link_text("Next >").click()
+                driver.find_element_by_class_name("next").click()
+
+
             except Exception, e:
                 # traceback.print_exc(e)
                 print "Pulled {} pages".format(i+1)
@@ -110,28 +130,50 @@ class ParseProfiles():
         try:
             source = open(path)
             soup = BeautifulSoup(source, 'html.parser')
-            results = soup.find(id='results')
-            links = results.find_all("li", {"class": "mod"})
+            results = soup.find('ul','results-list')
+
+
+            #print results
+            
+            try:
+            	links = results.find_all("li", {"class": "search-result search-entity search-result--person search-result--blue-hover ember-view"})
+            except:
+            	pass
+            	links = []
+
             for person in links:
-                link = person.find('a', {"class": "result-image"})
+                link = person.find('img', {"class": "lazy-image loaded"})
                 ind = {'name': "Not Found",
                        'picture': "Not Found",
                        'email': "Not Found",
                        'job': "Not Found"}
+                img = ""
                 if link:
                     # img = link.img
                     img = link
+                    #print img
                 if img:
                     # ind['picture'] = img.get('src')
                     ind['picture'] = img
-                name = person.find('a', {"class": "title main-headline"})
+                else:
+                	ind['picture'] = ""
+                #name = person.find('a', {"class": "title main-headline"})
+                name = person.find('span',{"class": "name"})
                 if name:
-                    ind['name'] = name.text
-                job = person.find('p', {"class": "title"})
+                    name = name.text#name.text
+                    ind['name'] = name
+                job = person.find('p', {"class": "search-result__snippets mt2 Sans-13px-black-55% ember-view"})
                 if not job:
-                    job = person.find('div', {"class": "description"})
+                    job = person.find('p', {"class": "subline-level-1 Sans-15px-black-85% search-result__truncate"})
+                    #print "Description"
+                    #print job.text
+                    jobval = job.text
+                else:
+                	jobval = job.text.split("\n")[1]
                 if job:
-                    ind['job'] = job.text
+                    ind['job'] = jobval
+                    #print "Job text"
+                    #print job.text
                 # print ind['name']
                 self.employees.append(ind)
         except Exception, e:
@@ -142,16 +184,45 @@ class ParseProfiles():
         # pprint(self.employees)
         body = ""
         csv = []
-        header = "<table>" \
-                 "<thead>" \
-                 "<tr>" \
-                 "<td>Picture</td>" \
-                 "<td>Name</td>" \
-                 "<td>Possible Email:</td>" \
-                 "<td>Job</td>" \
-                 "</tr>" \
-                 "</thead>"
+        css = """<style>
+		#employees {
+		    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+		    border-collapse: collapse;
+		    width: 100%;
+		}
+
+		#employees td, #employees th {
+		    border: 1px solid #ddd;
+		    padding: 8px;
+		}
+
+		#employees tr:nth-child(even){background-color: #f2f2f2;}
+
+		#employees tr:hover {background-color: #ddd;}
+
+		#employees th {
+		    padding-top: 12px;
+		    padding-bottom: 12px;
+		    text-align: left;
+		    background-color: #4CAF50;
+		    color: white;
+		}
+		</style>
+
+		"""
+
+        header = """<center><table id=\"employees\">          
+                 <tr>
+                 <th>Name</th>
+                 <th>Possible Email:</th>
+                 <th>Job</th>
+                 </tr>
+                 """
         for emp in self.employees:
+        	# Get rid of stupid people with brackets
+            #if '(' in emp['name']:
+            #    if ')' in emp['name']:
+            #        continue
             if ',' in emp['name']:
                 print "user's name contains a comma, might not display properly: {}".format(emp['name'])
             name = emp['name'].split(',')[0]
@@ -167,9 +238,14 @@ class ParseProfiles():
                     fname = parts[0]
                     mname = parts[1]
                     lname = parts[2]
+                else:
+                	fname = parts[0]
+                	lname = parts[1]
                 fname = re.sub('[^A-Za-z]+', '', fname)
+                emp['fname'] = fname
                 mname = re.sub('[^A-Za-z]+', '', mname)
                 lname = re.sub('[^A-Za-z]+', '', lname)
+                emp['lname'] = lname
                 if self.prefix == 'full':
                     user = '{}{}{}'.format(fname, mname, lname)
                 if self.prefix == 'firstlast':
@@ -188,16 +264,16 @@ class ParseProfiles():
             # Only add the employee if we're not ignoring it
             if not self.ignore or (self.ignore and emp['name'] != 'LinkedIn Member'):
                 body += "<tr>" \
-                        "<td>{picture}</td>" \
                         "<td>{name}</td>" \
                         "<td>{email}</td>" \
                         "<td>{job}</td>" \
-                        "<td>".format(**emp)
-                csv.append('{name},{email},"{job}"'.format(**emp))
+                        "<a>".format(**emp)
+                csv.append('"{fname}","{lname}","{name}","{email}","{job}"'.format(**emp))
             else:
                 print "ignoring user: {} - {}".format(emp['name'], emp['job'])
-        foot = "</table>"
+        foot = "</table></center>"
         f = open('{}/employees.html'.format(self.company), 'wb')
+        f.write(css)
         f.write(header)
         f.write(body)
         f.write(foot)
@@ -239,6 +315,7 @@ def main():
         # Parse the downloaded page sources
         pp = ParseProfiles(args.email_suffix, args.email_prefix, args.ignore, args.company)
         for i in range(0, 99):
+            print "Parsing Page: %d" % i
             filename = "{}{}_source.html".format(company, i)
             file_path = "{}/{}".format(company, filename)
             if os.path.isfile(file_path):
