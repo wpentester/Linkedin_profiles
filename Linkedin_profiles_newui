@@ -138,7 +138,7 @@ class ParseProfiles():
             #print results
             
             try:
-            	links = results.find_all("li", {"class": "search-result search-entity search-result--person search-result--blue-hover ember-view"})
+            	links = results.find_all("div", {"class": "search-result search-entity search-result--person search-result--occlusion-enabled search-result--blue-hover ember-view"})
             except:
             	pass
             	links = []
