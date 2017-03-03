@@ -94,7 +94,7 @@ class LinkedinProfiles():
                 sleep(50.0/1000.0)
 		
 	    while driver.execute_script("$b = document.body.scrollHeight; window.scrollTo(0, $b);"):
-                sleep(50.0 / 1000.0)
+                sleep(3)
 
             f = open("{}/{}{}_source.html".format(self.scompany, self.scompany, i), 'wb')
             source = driver.page_source
