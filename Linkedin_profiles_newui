@@ -17,6 +17,7 @@ from selenium.webdriver.support import expected_conditions as EC
 reload(sys)
 sys.setdefaultencoding('utf8')
 
+
 class LinkedinProfiles():
     def __init__(self, company):
         self.base_url = "https://www.linkedin.com"
@@ -49,12 +50,12 @@ class LinkedinProfiles():
         # wait until the class appears
         driver.implicitly_wait(5)
 
-        #a = driver.find_elements_by_xpath(//*[contains(@id, 'a11y-ember')]""")
+        # a = driver.find_elements_by_xpath(//*[contains(@id, 'a11y-ember')]""")
         targetElement = driver.find_element_by_xpath("//input[contains(@id, \"a11y-ember\")]").clear()
-        targetElement = driver.find_element_by_xpath("//input[contains(@id, \"a11y-ember\")]").send_keys(self.company)  
+        targetElement = driver.find_element_by_xpath("//input[contains(@id, \"a11y-ember\")]").send_keys(self.company)
         # driver.find_element_by_name("submit").click()
-        #driver.find_element_by_class_name('ember-text-field ember-view').clear()
-        #driver.find_element_by_class_name('ember-text-field ember-view').send_keys(self.company)
+        # driver.find_element_by_class_name('ember-text-field ember-view').clear()
+        # driver.find_element_by_class_name('ember-text-field ember-view').send_keys(self.company)
 
 
         # Create the search URL
@@ -89,11 +90,11 @@ class LinkedinProfiles():
         for i in range(0, 99):
             print "Processing Page: %d" % i
 
-            #driver.find_elements_by_xpath('//div[contains(@class, \"search-is-loading\")]')
+            # driver.find_elements_by_xpath('//div[contains(@class, \"search-is-loading\")]')
             while driver.find_elements_by_xpath('//div[contains(@class, \"search-is-loading\")]'):
-                sleep(50.0/1000.0)
-		
-	    while driver.execute_script("$b = document.body.scrollHeight; window.scrollTo(0, $b);"):
+                sleep(50.0 / 1000.0)
+
+            while driver.execute_script("$b = document.body.scrollHeight; window.scrollTo(0, $b);"):
                 sleep(3)
 
             f = open("{}/{}{}_source.html".format(self.scompany, self.scompany, i), 'wb')
@@ -115,10 +116,11 @@ class LinkedinProfiles():
 
             except Exception, e:
                 # traceback.print_exc(e)
-                print "Pulled {} pages".format(i+1)
+                print "Pulled {} pages".format(i + 1)
                 break
-        # driver.find_element_by_link_text("Next >").click()
-        # driver.find_element_by_link_text("Next >").click()
+                # driver.find_element_by_link_text("Next >").click()
+                # driver.find_element_by_link_text("Next >").click()
+
 
 class ParseProfiles():
     def __init__(self, suffix, prefix, ignore, company):
@@ -132,16 +134,16 @@ class ParseProfiles():
         try:
             source = open(path)
             soup = BeautifulSoup(source, 'html.parser')
-            results = soup.find('ul','results-list')
+            results = soup.find('ul', 'results-list')
 
+            # print results
 
-            #print results
-            
             try:
-            	links = results.find_all("div", {"class": "search-result search-entity search-result--person search-result--occlusion-enabled search-result--blue-hover ember-view"})
+                links = results.find_all("li", {
+                    "class": "search-result search-entity search-result--person search-result--blue-hover ember-view"})
             except:
-            	pass
-            	links = []
+                pass
+                links = []
 
             for person in links:
                 link = person.find('img', {"class": "lazy-image loaded"})
@@ -153,29 +155,29 @@ class ParseProfiles():
                 if link:
                     # img = link.img
                     img = link
-                    #print img
+                    # print img
                 if img:
                     # ind['picture'] = img.get('src')
                     ind['picture'] = img
                 else:
-                	ind['picture'] = ""
-                #name = person.find('a', {"class": "title main-headline"})
-                name = person.find('span',{"class": "name"})
+                    ind['picture'] = ""
+                # name = person.find('a', {"class": "title main-headline"})
+                name = person.find('span', {"class": "name"})
                 if name:
-                    name = name.text#name.text
+                    name = name.text  # name.text
                     ind['name'] = name
                 job = person.find('p', {"class": "search-result__snippets mt2 Sans-13px-black-55% ember-view"})
                 if not job:
                     job = person.find('p', {"class": "subline-level-1 Sans-15px-black-85% search-result__truncate"})
-                    #print "Description"
-                    #print job.text
+                    # print "Description"
+                    # print job.text
                     jobval = job.text
                 else:
-                	jobval = job.text.split("\n")[1]
+                    jobval = job.text.split("\n")[1]
                 if job:
                     ind['job'] = jobval
-                    #print "Job text"
-                    #print job.text
+                    # print "Job text"
+                    # print job.text
                 # print ind['name']
                 self.employees.append(ind)
         except Exception, e:
@@ -213,7 +215,7 @@ class ParseProfiles():
 
 		"""
 
-        header = """<center><table id=\"employees\">          
+        header = """<center><table id=\"employees\">
                  <tr>
                  <th>Name</th>
                  <th>Possible Email:</th>
@@ -221,8 +223,8 @@ class ParseProfiles():
                  </tr>
                  """
         for emp in self.employees:
-        	# Get rid of stupid people with brackets
-            #if '(' in emp['name']:
+            # Get rid of stupid people with brackets
+            # if '(' in emp['name']:
             #    if ')' in emp['name']:
             #        continue
             if ',' in emp['name']:
@@ -241,8 +243,8 @@ class ParseProfiles():
                     mname = parts[1]
                     lname = parts[2]
                 else:
-                	fname = parts[0]
-                	lname = parts[1]
+                    fname = parts[0]
+                    lname = parts[1]
                 fname = re.sub('[^A-Za-z]+', '', fname)
                 emp['fname'] = fname
                 mname = re.sub('[^A-Za-z]+', '', mname)
@@ -286,18 +288,19 @@ class ParseProfiles():
 
 
 class SmartFormatter(argparse.HelpFormatter):
-
     def _split_lines(self, text, width):
         if text.startswith('R|'):
             return text[2:].splitlines()
         # this is the RawTextHelpFormatter._split_lines
         return argparse.HelpFormatter._split_lines(self, text, width)
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Scrape Linkedin profiles for a specified company', formatter_class=SmartFormatter)
+    parser = argparse.ArgumentParser(description='Scrape Linkedin profiles for a specified company',
+                                     formatter_class=SmartFormatter)
     parser.add_argument('--company', help='The name of the company on Linkedin', required=True)
     parser.add_argument('--email_suffix', help='The company email suffix ex: user@<email_suffix>', required=True)
-    parser.add_argument('--email_prefix', choices=['firstlast', 'firstmlast','flast', 'fmlast', 'full', 'first.last'],
+    parser.add_argument('--email_prefix', choices=['firstlast', 'firstmlast', 'flast', 'fmlast', 'full', 'first.last'],
                         help='R|The email prefix format ex: <email_prefix>@company.com\n'
                              ' full   - ex: johntimothydoe@company.com\n'
                              ' firstmlast - ex: johntdoe@company.com\n'
