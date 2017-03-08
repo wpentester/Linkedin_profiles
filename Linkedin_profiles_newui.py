@@ -139,8 +139,8 @@ class ParseProfiles():
             # print results
 
             try:
-                links = results.find_all("li", {
-                    "class": "search-result search-entity search-result--person search-result--blue-hover ember-view"})
+                links = results.find_all("div", {
+                    "class": "search-result search-entity search-result--person search-result--occlusion-enabled search-result--blue-link-enabled ember-view"})
             except:
                 pass
                 links = []
@@ -162,7 +162,8 @@ class ParseProfiles():
                 else:
                     ind['picture'] = ""
                 # name = person.find('a', {"class": "title main-headline"})
-                name = person.find('span', {"class": "name"})
+                name = person.find('span', {"class": "name actor-name"})
+
                 if name:
                     name = name.text  # name.text
                     ind['name'] = name
@@ -177,9 +178,9 @@ class ParseProfiles():
                 if job:
                     ind['job'] = jobval
                     # print "Job text"
-                    # print job.text
-                # print ind['name']
-                self.employees.append(ind)
+                    # print job.text 
+                if not (ind['name'] == "Not Found"):
+                	self.employees.append(ind)
         except Exception, e:
             print "Encountered error parsing file: {}".format(path)
             traceback.print_exc(e)
